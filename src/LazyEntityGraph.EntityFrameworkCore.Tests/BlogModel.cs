@@ -73,4 +73,41 @@ namespace LazyEntityGraph.EntityFrameworkCore.Tests
                 .HasForeignKey<ContactDetails>(cd => cd.UserId);
         }
     }
+
+    public class MultiColumnContext : DbContext
+    {
+        public MultiColumnContext(DbContextOptions<MultiColumnContext> options)
+            : base(options)
+        { }
+
+        public DbSet<Parent> Parents { get; set; }
+        public DbSet<Child> Children { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Parent>()
+                .HasKey(p => new {p.Id, p.Version});
+
+            modelBuilder.Entity<Parent>()
+                .HasMany(u => u.Children)
+                .WithOne(p => p.Parent)
+                .IsRequired()
+                .HasForeignKey(c => new {c.ParentId, c.ParentVersion});
+        }
+
+        public class Parent
+        {
+            public long Id { get; set; }
+            public int Version { get; set; }
+            public virtual ICollection<Child> Children { get; set; }
+        }
+
+        public class Child
+        {
+            public long ChildId { get; set; }
+            public long ParentId { get; set; }
+            public int ParentVersion { get; set; }
+            public virtual Parent Parent { get; set; }
+        }
+    }
 }
